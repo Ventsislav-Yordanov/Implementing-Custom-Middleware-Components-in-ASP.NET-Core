@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Routing;
 
 namespace AspNetCore_Middleware
 {
@@ -27,6 +28,13 @@ namespace AspNetCore_Middleware
         {
             services.AddOptions();
 
+            services.AddCors();
+
+            services.AddRouting();
+
+            services.AddDistributedMemoryCache();
+            services.AddSession();
+
             var myOptions = this.Configuration.GetSection("MyMiddlewareOptionsSection");
             services.Configure<MyMiddlewareOptions>(o => o.OptionOne = myOptions["OptionOne"]);
         }
@@ -39,25 +47,50 @@ namespace AspNetCore_Middleware
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseStaticFiles();
+
+            app.UseSession();
+
+            var routeBuilder = new RouteBuilder(app);
+
+            routeBuilder.MapGet("greeting/{name}", appBuilder =>
+            {
+                appBuilder.Run(async (context) =>
+                {
+                    var name = context.GetRouteValue("name");
+                    await context.Response.WriteAsync("Hey there, " + name);
+                });
+            });
+
+            app.UseRouter(routeBuilder.Build());
+
+            app.UseCors((builder) =>
+            {
+                builder.WithOrigins("http://localhost:6671/");
+            });
+
             app.Use(async (context, next) =>
             {
-                await context.Response.WriteAsync("Hello from coponent 1 ◕‿◕" + Environment.NewLine);
+                context.Session.SetString("my message", "you have completed setting a string in session");
+                await context.Response.WriteAsync("Hello from coponent 1" + Environment.NewLine);
                 await next.Invoke();
-                await context.Response.WriteAsync("Hello from coponent 1 again ◕‿◕" + Environment.NewLine);
+                await context.Response.WriteAsync("Hello from coponent 1 again" + Environment.NewLine);
+                var myMessage = context.Session.GetString("my message");
+                await context.Response.WriteAsync("Session message: " + myMessage + Environment.NewLine);
             });
 
             app.UseMyMiddleware();
 
-            app.Map("/mymapbranch", (appbuilder) =>
+            app.Map("/mymapbranch", (appBuilder) =>
             {
-                appbuilder.Use(async (context, next) =>
+                appBuilder.Use(async (context, next) =>
                 {
                     await next.Invoke();
                 });
 
-                appbuilder.Run(async (context) =>
+                appBuilder.Run(async (context) =>
                 {
-                    await context.Response.WriteAsync("Greetings from my Map Branch ◕‿↼" + Environment.NewLine);
+                    await context.Response.WriteAsync("Greetings from my Map Branch" + Environment.NewLine);
                 });
             });
 
