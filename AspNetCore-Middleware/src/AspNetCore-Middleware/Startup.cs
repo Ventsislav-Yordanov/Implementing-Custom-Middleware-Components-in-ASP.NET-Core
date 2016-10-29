@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -21,10 +18,10 @@ namespace AspNetCore_Middleware
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
-            //if (env.IsDevelopment())
-            //{
-            //    app.UseDeveloperExceptionPage();
-            //}
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
 
             app.Use(async (context, next) =>
             {
@@ -32,6 +29,8 @@ namespace AspNetCore_Middleware
                 await next.Invoke();
                 await context.Response.WriteAsync("Hello from coponent 1 again ◕‿◕" + Environment.NewLine);
             });
+
+            app.UseMyMiddleware();
 
             app.Map("/mymapbranch", (appbuilder) =>
             {
