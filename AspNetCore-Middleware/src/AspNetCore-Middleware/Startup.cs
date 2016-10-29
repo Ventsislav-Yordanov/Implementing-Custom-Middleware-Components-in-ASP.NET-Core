@@ -30,7 +30,28 @@ namespace AspNetCore_Middleware
             {
                 await context.Response.WriteAsync("Hello from coponent 1 ◕‿◕" + Environment.NewLine);
                 await next.Invoke();
-                await context.Response.WriteAsync("Hello from coponent 1 again ◕‿◕");
+                await context.Response.WriteAsync("Hello from coponent 1 again ◕‿◕" + Environment.NewLine);
+            });
+
+            app.Map("/mymapbranch", (appbuilder) =>
+            {
+                appbuilder.Use(async (context, next) =>
+                {
+                    await next.Invoke();
+                });
+
+                appbuilder.Run(async (context) =>
+                {
+                    await context.Response.WriteAsync("Greetings from my Map Branch ◕‿↼" + Environment.NewLine);
+                });
+            });
+
+            app.MapWhen(context => context.Request.Query.ContainsKey("querybranch"), (appBuilder) =>
+            {
+                appBuilder.Run(async (context) =>
+                {
+                    await context.Response.WriteAsync("You have arrived at your MapWhen branch" + Environment.NewLine);
+                });
             });
 
             app.Run(async (context) =>
